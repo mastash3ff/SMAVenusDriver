@@ -273,13 +273,13 @@ class SmaDriver:
         # I need to write a proper CC-CV to float charger state machine, but for now, roll-back current
         if Batt_V > 56:  # grab control of requested current from above code.
             if Batt_V > 56.6:
-                Req_Charge_A = 0;
+                Req_Charge_A = 0
             elif Batt_V > 56.3:
                 Req_Charge_A = (Battery["Current"] * -1) - 1
             else:
                 Req_Charge_A = (Battery["Current"] * -1)
         if Req_Charge_A < 0:
-            Req_Charge_A = 0;
+            Req_Charge_A = 0
 
         # Low battery safety, if low voltage, pre-empt SoC with minimum value to force grid transfer
         if Line1["ExtVoltage"] > 100 and Batt_V < 49.6:

@@ -23,6 +23,7 @@ from dbusmonitor import DbusMonitor
 # import delegates
 # from sc_utils import safeadd as _safeadd, safemax as _safemax
 from datetime import datetime
+from Install.bc_fsm import *
 
 log = logging.getLogger()
 
@@ -115,6 +116,13 @@ class SmaDriver:
 
         self._changed = True
         self._updatevalues()
+
+        # TODO hard-coded values for setting battery voltage threshold, max amp requested, absorption voltage level.
+        #  Would typically be read from external source.
+        MAX_V = 60.0
+        MAX_A = 150.0
+        ABS_V = 56.5
+        self.bc_fsm = BatteryChargerState(MAX_V, MAX_A, ABS_V)
 
         # gobject.timeout_add(1000, exit_on_error, self._handletimertick)
         gobject.timeout_add(2000, exit_on_error, self._handlecantx)
@@ -216,13 +224,13 @@ class SmaDriver:
         if self._dbusservice["/Dc/0/Power"] > 0:
             # Grid to battery
             self._dbusservice["/Energy/GridToAcOut"] = self._dbusservice["/Energy/GridToAcOut"] + (
-                        (self._dbusservice["/Ac/Out/P"]) * energy_sec * 0.00000028)
+                    (self._dbusservice["/Ac/Out/P"]) * energy_sec * 0.00000028)
             self._dbusservice["/Energy/GridToDc"] = self._dbusservice["/Energy/GridToDc"] + (
-                        self._dbusservice["/Dc/0/Power"] * energy_sec * 0.00000028)
+                    self._dbusservice["/Dc/0/Power"] * energy_sec * 0.00000028)
         else:
             # battery to out
             self._dbusservice["/Energy/DcToAcOut"] = self._dbusservice["/Energy/DcToAcOut"] + (
-                        (self._dbusservice["/Ac/Out/P"]) * energy_sec * 0.00000028)
+                    (self._dbusservice["/Ac/Out/P"]) * energy_sec * 0.00000028)
         # print(timer() - self._dbusservice["/Energy/Time"], ":", self._dbusservice["/Ac/Out/P"])
         self._dbusservice["/Energy/AcIn1ToAcOut"] = self._dbusservice["/Energy/GridToAcOut"]
         self._dbusservice["/Energy/AcIn1ToInverter"] = self._dbusservice["/Energy/GridToDc"]
@@ -271,6 +279,11 @@ class SmaDriver:
         # Poor mans CC-CV charger. Since the SMA charge controler is disabled in Li-ion mode
         # we have to pretend to be one, assuming the inverter has been forced on grid by user.
         # I need to write a proper CC-CV to float charger state machine, but for now, roll-back current
+
+        # TODO Code is commented out to provide an idea of what a state machine would look like if implemented.
+        #data = dict()  # TODO data from above to drive state machine decisions
+        #self.bc_fsm.action(data)
+
         if Batt_V > 56:  # grab control of requested current from above code.
             if Batt_V > 56.6:
                 Req_Charge_A = 0

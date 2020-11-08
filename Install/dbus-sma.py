@@ -4,6 +4,7 @@ import gobject
 import argparse
 import sys
 import os
+import logging
 import json
 import can
 from can.bus import BusState
@@ -21,6 +22,9 @@ from dbusmonitor import DbusMonitor
 #from logger import setup_logging
 #import delegates
 #from sc_utils import safeadd as _safeadd, safemax as _safemax
+from datetime import datetime
+
+log = logging.getLogger()
 
 softwareVersion = '1.0'
 
@@ -374,6 +378,17 @@ if __name__ == "__main__":
 
   print("-------- dbus_SMADriver, v" + "1" + " is starting up --------")
 	#logger = setup_logging(args.debug)
+  logging.basicConfig(format='%(levelname)-8s %(message)s',
+                      level=(logging.DEBUG if args.debug else logging.INFO))
+
+  logLevel = {
+    0: 'NOTSET',
+    10: 'DEBUG',
+    20: 'INFO',
+    30: 'WARNING',
+    40: 'ERROR',
+  }
+  log.info('Loglevel set to ' + logLevel[log.getEffectiveLevel()])
 
 	# Have a mainloop, so we can send/receive asynchronous calls to and from dbus
   DBusGMainLoop(set_as_default=True)

@@ -29,6 +29,13 @@ log = logging.getLogger()
 
 softwareVersion = '1.0'
 
+# TODO BMS values eventually read from settings.
+MAX_V = 60.0
+MIN_V = 46.0
+MAX_A = 20.0
+REQ_DISCHARGE_A = 200.0
+ABS_V = 56.5
+
 # connect and register to dbus
 driver = {
     'name': "SMA SunnyIsland",
@@ -115,13 +122,7 @@ class SmaDriver:
         self._dbusservice.add_path('/Energy/Time', timer())
 
         self._changed = True
-        self._updatevalues()
 
-        # TODO hard-coded values for setting battery voltage threshold, max amp requested, absorption voltage level.
-        #  Would typically be read from external source.
-        MAX_V = 60.0
-        MAX_A = 150.0
-        ABS_V = 56.5
         self.bc_fsm = BatteryChargerState(MAX_V, MAX_A, ABS_V)
 
         # gobject.timeout_add(1000, exit_on_error, self._handletimertick)
@@ -134,10 +135,6 @@ class SmaDriver:
 
     def _create_dbus_service(self):
         raise Exception("This function should be overridden")
-
-    def _updatevalues(self):
-        Soc = self._dbusmonitor.get_value('com.victronenergy.system', '/Dc/Battery/Soc')
-        # print(Soc)
 
     def _dbus_value_changed(self, dbusServiceName, dbusPath, dict, changes, deviceInstance):
         self._changed = True
@@ -269,13 +266,6 @@ class SmaDriver:
         if Soc < 8:
             Req_Charge_A = 150.0
 
-        # BMS values eventually read from settings.
-        Max_V = 60.0
-        Min_V = 46.0
-        #  Req_Charge_A = 20.0
-        Req_Discharge_A = 200.0
-        Abs_V = 56.5
-
         # Poor mans CC-CV charger. Since the SMA charge controler is disabled in Li-ion mode
         # we have to pretend to be one, assuming the inverter has been forced on grid by user.
         # I need to write a proper CC-CV to float charger state machine, but for now, roll-back current
@@ -304,11 +294,11 @@ class SmaDriver:
         SoC_HD_H, SoC_HD_L = bytes(SoC_HD)
         Req_Charge_HD = int(Req_Charge_A * 10)
         Req_Charge_H, Req_Charge_L = bytes(Req_Charge_HD)
-        Req_Discharge_HD = int(Req_Discharge_A * 10)
+        Req_Discharge_HD = int(REQ_DISCHARGE_A * 10)
         Req_Discharge_H, Req_Discharge_L = bytes(Req_Discharge_HD)
-        Max_V_HD = int(Max_V * 10)
+        Max_V_HD = int(MAX_V * 10)
         Max_V_H, Max_V_L = bytes(Max_V_HD)
-        Min_V_HD = int(Min_V * 10)
+        Min_V_HD = int(MIN_V * 10)
         Min_V_H, Min_V_L = bytes(Min_V_HD)
 
         msg = can.Message(arbitration_id=0x351,

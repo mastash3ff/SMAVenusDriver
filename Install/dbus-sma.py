@@ -375,7 +375,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print("-------- dbus_SMADriver, v" + "1" + " is starting up --------")
+    log.info("-------- dbus_SMADriver, v" + "1" + " is starting up --------")
     # logger = setup_logging(args.debug)
     logging.basicConfig(format='%(levelname)-8s %(message)s',
                         level=(logging.DEBUG if args.debug else logging.INFO))
@@ -398,7 +398,7 @@ if __name__ == "__main__":
     # logger.info("Starting mainloop, responding only on events")
     mainloop = gobject.MainLoop()
     mainloop.run()
-    print("-------- dbus_SMADriver, v" + "1" + " is shuting down --------")
+    log.info("-------- dbus_SMADriver, v" + "1" + " is shuting down --------")
     bus.shutdown()
     sys.exit(0xFF)
     quit(1)

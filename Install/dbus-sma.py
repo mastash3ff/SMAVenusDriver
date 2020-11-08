@@ -121,11 +121,8 @@ class SmaDriver:
         self._dbusservice.add_path('/Energy/InverterToAcOut', 0)
         self._dbusservice.add_path('/Energy/Time', timer())
 
-        self._changed = True
-
         self.bc_fsm = BatteryChargerState(MAX_V, MAX_A, ABS_V)
 
-        # gobject.timeout_add(1000, exit_on_error, self._handletimertick)
         gobject.timeout_add(2000, exit_on_error, self._handlecantx)
         gobject.timeout_add(2000, exit_on_error, self._handleenergy)
         gobject.timeout_add(2, exit_on_error, self._parse_can_data)
@@ -137,7 +134,7 @@ class SmaDriver:
         raise Exception("This function should be overridden")
 
     def _dbus_value_changed(self, dbusServiceName, dbusPath, dict, changes, deviceInstance):
-        self._changed = True
+        pass
 
     def _parse_can_data(self):
 
@@ -236,14 +233,6 @@ class SmaDriver:
         return True
 
     # Called on a one second timer
-    def _handletimertick(self):
-        if self._changed:
-            self._updatevalues()
-        self._changed = False
-
-        return True  # keep timer running
-
-    # Called on a one second timer
     def _handlecantx(self):
         # print("TX here")
         SoC_HD = self._dbusmonitor.get_value('com.victronenergy.system', '/Dc/Battery/Soc')
@@ -271,8 +260,8 @@ class SmaDriver:
         # I need to write a proper CC-CV to float charger state machine, but for now, roll-back current
 
         # TODO Code is commented out to provide an idea of what a state machine would look like if implemented.
-        #data = dict()  # TODO data from above to drive state machine decisions
-        #self.bc_fsm.action(data)
+        # data = dict()  # TODO data from above to drive state machine decisions
+        # self.bc_fsm.action(data)
 
         if Batt_V > 56:  # grab control of requested current from above code.
             if Batt_V > 56.6:
@@ -321,31 +310,9 @@ class SmaDriver:
                            data=[0x03, 0x04, 0x0a, 0x04, 0x76, 0x02, 0x00, 0x00],
                            is_extended_id=False)
 
-        bus.send(msg)
-        #       print("Message sent on {}".format(bus.channel_info))
-        time.sleep(.100)
-
-        bus.send(msg2)
-        #      print("Message sent on {}".format(bus.channel_info))
-        time.sleep(.100)
-
-        bus.send(msg3)
-        #     print("Message sent on {}".format(bus.channel_info))
-
-        time.sleep(.100)
-
-        bus.send(msg4)
-        #    print("Message sent on {}".format(bus.channel_info))
-
-        time.sleep(.100)
-
-        bus.send(msg5)
-        #        print("Message sent on {}".format(bus.channel_info))
-
-        time.sleep(.100)
-
-        bus.send(msg6)
-        #       print("Message sent on {}".format(bus.channel_info))
+        for m in [msg, msg2, msg3, msg4, msg5, msg6]:
+            bus.send(m)
+            time.sleep(.100)
 
         return True  # keep timer running
 
@@ -404,4 +371,3 @@ if __name__ == "__main__":
     log.info("-------- dbus_SMADriver, v" + "1" + " is shuting down --------")
     bus.shutdown()
     sys.exit(0xFF)
-    quit(1)
